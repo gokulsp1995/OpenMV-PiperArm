@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenMV RL Data Stream — Dashboard</title>
+    <meta name="description" content="Real-time visualisation of OpenMV AE3 camera stream with LIDAR, IMU, and AprilTag data for robot arm RL training.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ── Reset & Design Tokens ────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2035;
+            --bg-card-hover: #1f2a45;
+            --border: #2a3550;
+            --border-glow: #3b82f6;
+
+            --text-primary: #e8edf5;
+            --text-secondary: #8b9ab8;
+            --text-muted: #5b6a85;
+
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #22c55e;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-violet: #8b5cf6;
+            --accent-pink: #ec4899;
+
+            --gradient-blue: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            --gradient-green: linear-gradient(135deg, #22c55e, #16a34a);
+            --gradient-red: linear-gradient(135deg, #ef4444, #dc2626);
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
+
+            --shadow-card: 0 4px 24px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2);
+            --shadow-glow-blue: 0 0 20px rgba(59,130,246,0.2);
+            --shadow-glow-green: 0 0 20px rgba(34,197,94,0.2);
+
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Header ───────────────────────────────────────────────────────── */
+        .header {
+            background: linear-gradient(180deg, rgba(26,32,53,0.95) 0%, rgba(10,14,23,0.95) 100%);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--gradient-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: white;
+            box-shadow: var(--shadow-glow-blue);
+        }
+
+        .header-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* ── Status Indicators ────────────────────────────────────────────── */
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-dot.connected {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        .status-dot.disconnected {
+            background: var(--accent-red);
+            box-shadow: 0 0 8px var(--accent-red);
+            animation: pulse-red 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ── Main Grid Layout ─────────────────────────────────────────────── */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            grid-template-rows: auto auto;
+            gap: 16px;
+            padding: 16px 24px 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* ── Card Component ───────────────────────────────────────────────── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            border-color: rgba(59,130,246,0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.015);
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title .icon {
+            font-size: 16px;
+        }
+
+        .card-badge {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            padding: 2px 8px;
+            border-radius: 100px;
+            background: rgba(59,130,246,0.15);
+            color: var(--accent-blue);
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 16px 18px;
+        }
+
+        /* ── Video Panel ──────────────────────────────────────────────────── */
+        .video-card {
+            grid-column: 1;
+            grid-row: 1 / 3;
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            overflow: hidden;
+            aspect-ratio: 16/10;
+        }
+
+        .video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .video-badge {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .video-badge.fps { color: var(--accent-green); }
+        .video-badge.res { color: var(--accent-cyan); }
+        .video-badge.rec {
+            color: var(--accent-red);
+            animation: rec-pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes rec-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            gap: 12px;
+        }
+
+        .video-placeholder .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Right Panel ──────────────────────────────────────────────────── */
+        .right-panel {
+            grid-column: 2;
+            grid-row: 1 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* ── LIDAR Heatmap ────────────────────────────────────────────────── */
+        .lidar-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 3px;
+            padding: 4px;
+        }
+
+        .lidar-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.85);
+            transition: background 0.15s ease;
+            cursor: default;
+            position: relative;
+        }
+
+        .lidar-cell:hover {
+            transform: scale(1.1);
+            z-index: 1;
+            box-shadow: 0 0 12px rgba(0,0,0,0.5);
+        }
+
+        .lidar-legend {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 4px 0;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .lidar-gradient-bar {
+            height: 6px;
+            border-radius: 3px;
+            margin: 6px 4px 0;
+            background: linear-gradient(90deg,
+                #22c55e 0%,
+                #eab308 30%,
+                #f97316 60%,
+                #ef4444 85%,
+                #7f1d1d 100%
+            );
+        }
+
+        /* ── IMU Panel ────────────────────────────────────────────────────── */
+        .imu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .imu-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            padding-bottom: 6px;
+            grid-column: 1 / -1;
+        }
+
+        .imu-axis {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .imu-axis-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .imu-axis-name {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .imu-axis-name.x { color: var(--accent-red); }
+        .imu-axis-name.y { color: var(--accent-green); }
+        .imu-axis-name.z { color: var(--accent-blue); }
+
+        .imu-axis-value {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .sparkline-container {
+            width: 100%;
+            height: 28px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .sparkline-container canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ── AprilTag Panel ───────────────────────────────────────────────── */
+        .apriltag-list {
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .apriltag-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid transparent;
+            transition: var(--transition);
+            margin-bottom: 6px;
+        }
+
+        .apriltag-item:hover {
+            background: rgba(139,92,246,0.08);
+            border-color: rgba(139,92,246,0.2);
+        }
+
+        .apriltag-id-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--accent-violet), var(--accent-pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .apriltag-details {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .apriltag-empty {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 16px;
+        }
+
+        /* ── Controls Panel ───────────────────────────────────────────────── */
+        .controls-card {
+            grid-column: 1 / -1;
+        }
+
+        .controls-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            border-radius: 100px;
+            background: var(--border);
+            transition: var(--transition);
+        }
+
+        .toggle-track::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            transition: var(--transition);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .toggle input:checked + .toggle-track {
+            background: var(--accent-blue);
+            box-shadow: var(--shadow-glow-blue);
+        }
+
+        .toggle input:checked + .toggle-track::after {
+            transform: translateX(20px);
+        }
+
+        /* Slider */
+        .quality-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 120px;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .quality-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(59,130,246,0.4);
+            transition: var(--transition);
+        }
+
+        .quality-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .quality-value {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--accent-blue);
+            min-width: 28px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.01em;
+        }
+
+        .btn-record {
+            background: var(--gradient-red);
+            color: white;
+        }
+
+        .btn-record:hover {
+            filter: brightness(1.15);
+            box-shadow: 0 0 16px rgba(239,68,68,0.3);
+        }
+
+        .btn-record.active {
+            animation: rec-pulse 1s ease-in-out infinite;
+        }
+
+        .btn-stop {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-stop:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .control-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+        }
+
+        /* ── Scrollbar ────────────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* ── Responsive ───────────────────────────────────────────────────── */
+        @media (max-width: 1100px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+            .video-card { grid-column: 1; grid-row: auto; }
+            .right-panel { grid-column: 1; grid-row: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ────────────────────────────────────────────────────────────── -->
+<header class="header">
+    <div class="header-left">
+        <div class="logo">RL</div>
+        <div>
+            <div class="header-title">OpenMV RL Data Stream</div>
+            <div class="header-subtitle">Robot Arm Training Data Capture</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="status-pill">
+            <span class="status-dot disconnected" id="statusDot"></span>
+            <span id="statusText">Connecting…</span>
+        </div>
+        <div class="status-pill" id="cameraIpPill" style="display:none">
+            <span>📷</span>
+            <span id="cameraIp">—</span>
+        </div>
+    </div>
+</header>
+
+<!-- ── Dashboard Grid ────────────────────────────────────────────────────── -->
+<main class="dashboard">
+
+    <!-- Video Feed -->
+    <section class="card video-card">
+        <div class="card-header">
+            <span class="card-title"><span class="icon">📹</span> Live Camera Feed</span>
+            <span class="card-badge" id="fpsCounter">0 FPS</span>
+        </div>
+        <div class="video-container" id="videoContainer">
+            <img id="videoFrame" alt="Camera feed" style="display:none">
+            <div class="video-placeholder" id="videoPlaceholder">
+                <div class="spinner"></div>
+                <div>Waiting for camera stream…</div>
+            </div>
+            <div class="video-overlay">
+                <span class="video-badge res" id="resolutionBadge">1280×800</span>
+                <span class="video-badge rec" id="recBadge" style="display:none">● REC</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Right Sidebar -->
+    <div class="right-panel">
+
+        <!-- LIDAR Heatmap -->
+        <section class="card">
+            <div class="card-header">
+                <span class="card-title"><span class="icon">🔭</span> LIDAR · VL53L8CX</span>
+                <span class="card-badge">8×8</span>
+            </div>
+            <div class="card-body">
+                <div class="lidar-grid" id="lidarGrid"></div>
+                <div class="lidar-gradient-bar"></div>
+                <div class="lidar-legend">
+                    <span>0 mm</span>
+                    <span>Near</span>
+                    <span>Far</span>
+                    <span>4000 mm</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- IMU Data -->
+        <section class="card">
+            <div class="card-header">
+                <span class="card-title"><span class="icon">🧭</span> IMU · LSM6DSM</span>
+                <span class="card-badge" id="imuRate">30 Hz</span>
+            </div>
+            <div class="card-body">
+                <div class="imu-grid">
+                    <div class="imu-section-title">Accelerometer (g)</div>
+                    <div class="imu-axis">
+                        <div class="imu-axis-label">
+                            <span class="imu-axis-name x">X</span>
+                            <span class="imu-axis-value" id="accelX">0.000</span>
+                        </div>
+                        <div class="sparkline-container"><canvas id="sparkAccelX"></canvas></div>
+                    </div>
+                    <div class="imu-axis">
+                        <div class="imu-axis-label">
+                            <span class="imu-axis-name y">Y</span>
+                            <span class="imu-axis-value" id="accelY">0.000</span>
+                        </div>
+                        <div class="sparkline-container"><canvas id="sparkAccelY"></canvas></div>
+                    </div>
+                    <div class="imu-axis">
+                        <div class="imu-axis-label">
+                            <span class="imu-axis-name z">Z</span>
+                            <span class="imu-axis-value" id="accelZ">0.000</span>
+                        </div>
+                        <div class="sparkline-container"><canvas id="sparkAccelZ"></canvas></div>
+                    </div>
+                    <div style="grid-column:2"></div>
+
+                    <div class="imu-section-title" style="margin-top:6px">Gyroscope (°/s)</div>
+                    <div class="imu-axis">
+                        <div class="imu-axis-label">
+                            <span class="imu-axis-name x">X</span>
+                            <span class="imu-axis-value" id="gyroX">0.00</span>
+                        </div>
+                        <div class="sparkline-container"><canvas id="sparkGyroX"></canvas></div>
+                    </div>
+                    <div class="imu-axis">
+                        <div class="imu-axis-label">
+                            <span class="imu-axis-name y">Y</span>
+                            <span class="imu-axis-value" id="gyroY">0.00</span>
+                        </div>
+                        <div class="sparkline-container"><canvas id="sparkGyroY"></canvas></div>
+                    </div>
+                    <div class="imu-axis">
+                        <div class="imu-axis-label">
+                            <span class="imu-axis-name z">Z</span>
+                            <span class="imu-axis-value" id="gyroZ">0.00</span>
+                        </div>
+                        <div class="sparkline-container"><canvas id="sparkGyroZ"></canvas></div>
+                    </div>
+                    <div style="grid-column:2"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AprilTags -->
+        <section class="card">
+            <div class="card-header">
+                <span class="card-title"><span class="icon">🏷️</span> AprilTags</span>
+                <span class="card-badge" id="tagCount">0 tags</span>
+            </div>
+            <div class="card-body">
+                <div class="apriltag-list" id="apriltagList">
+                    <div class="apriltag-empty">No tags detected</div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Controls Bar -->
+    <section class="card controls-card">
+        <div class="card-body">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <span class="control-label">AprilTag Detection</span>
+                    <label class="toggle" id="apriltagToggle">
+                        <input type="checkbox" id="apriltagCheck">
+                        <span class="toggle-track"></span>
+                    </label>
+                </div>
+
+                <div class="control-divider"></div>
+
+                <div class="control-group">
+                    <span class="control-label">JPEG Quality</span>
+                    <input type="range" class="quality-slider" id="qualitySlider"
+                           min="10" max="95" value="50">
+                    <span class="quality-value" id="qualityValue">50</span>
+                </div>
+
+                <div class="control-divider"></div>
+
+                <div class="control-group">
+                    <button class="btn btn-record" id="recordBtn" onclick="toggleRecording()">
+                        <span>●</span> Record
+                    </button>
+                </div>
+
+                <div style="flex:1"></div>
+
+                <div class="control-group">
+                    <span class="control-label" style="color:var(--text-muted)" id="frameCounter">Frame: 0</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+
+const state = {
+    ws: null,
+    connected: false,
+    recording: false,
+    fps: 0,
+    frameCount: 0,
+    fpsFrames: 0,
+    fpsTime: performance.now(),
+    apriltagEnabled: false,
+};
+
+// Sparkline data buffers (120 samples ≈ 4s at 30 Hz)
+const SPARK_LEN = 120;
+const sparkData = {
+    accelX: [], accelY: [], accelZ: [],
+    gyroX: [], gyroY: [], gyroZ: [],
+};
+
+// ── LIDAR Grid Init ──────────────────────────────────────────────────────────
+
+const lidarGrid = document.getElementById('lidarGrid');
+const lidarCells = [];
+for (let i = 0; i < 64; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'lidar-cell';
+    cell.textContent = '—';
+    cell.style.background = 'rgba(255,255,255,0.05)';
+    lidarGrid.appendChild(cell);
+    lidarCells.push(cell);
+}
+
+// ── WebSocket Connection ─────────────────────────────────────────────────────
+
+function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${proto}//${location.host}/ws`;
+
+    state.ws = new WebSocket(url);
+    state.ws.binaryType = 'arraybuffer';
+
+    state.ws.onopen = () => {
+        state.connected = true;
+        updateConnectionStatus(true);
+        // Request initial status
+        state.ws.send(JSON.stringify({ action: 'status' }));
+    };
+
+    state.ws.onclose = () => {
+        state.connected = false;
+        updateConnectionStatus(false);
+        setTimeout(connectWS, 2000);
+    };
+
+    state.ws.onerror = () => {
+        state.ws.close();
+    };
+
+    state.ws.onmessage = (event) => {
+        if (event.data instanceof ArrayBuffer) {
+            // Binary: JPEG frame
+            handleFrame(event.data);
+        } else {
+            // Text: JSON sensor data or control response
+            try {
+                handleJSON(JSON.parse(event.data));
+            } catch (e) {}
+        }
+    };
+}
+
+// ── Frame Handler ────────────────────────────────────────────────────────────
+
+const videoFrame = document.getElementById('videoFrame');
+const videoPlaceholder = document.getElementById('videoPlaceholder');
+let frameURL = null;
+
+function handleFrame(buffer) {
+    // Release previous blob URL
+    if (frameURL) URL.revokeObjectURL(frameURL);
+
+    const blob = new Blob([buffer], { type: 'image/jpeg' });
+    frameURL = URL.createObjectURL(blob);
+    videoFrame.src = frameURL;
+    videoFrame.style.display = 'block';
+    videoPlaceholder.style.display = 'none';
+
+    // FPS tracking
+    state.fpsFrames++;
+    state.frameCount++;
+    const now = performance.now();
+    const elapsed = now - state.fpsTime;
+    if (elapsed >= 1000) {
+        state.fps = Math.round(state.fpsFrames * 1000 / elapsed * 10) / 10;
+        state.fpsFrames = 0;
+        state.fpsTime = now;
+        document.getElementById('fpsCounter').textContent = `${state.fps} FPS`;
+    }
+    document.getElementById('frameCounter').textContent = `Frame: ${state.frameCount}`;
+}
+
+// ── JSON Handler ─────────────────────────────────────────────────────────────
+
+function handleJSON(msg) {
+    if (msg.type === 'sensor') {
+        updateIMU(msg.imu);
+        updateLIDAR(msg.tof);
+        updateAprilTags(msg.apriltags);
+    } else if (msg.type === 'client_status') {
+        if (msg.camera_ip) {
+            document.getElementById('cameraIp').textContent = msg.camera_ip;
+            document.getElementById('cameraIpPill').style.display = 'flex';
+        }
+    } else if (msg.type === 'record_status') {
+        state.recording = msg.active;
+        updateRecordUI();
+    }
+}
+
+// ── IMU Update ───────────────────────────────────────────────────────────────
+
+function updateIMU(imu) {
+    if (!imu) return;
+
+    document.getElementById('accelX').textContent = imu.ax.toFixed(3);
+    document.getElementById('accelY').textContent = imu.ay.toFixed(3);
+    document.getElementById('accelZ').textContent = imu.az.toFixed(3);
+    document.getElementById('gyroX').textContent = imu.gx.toFixed(2);
+    document.getElementById('gyroY').textContent = imu.gy.toFixed(2);
+    document.getElementById('gyroZ').textContent = imu.gz.toFixed(2);
+
+    // Append to sparkline buffers
+    pushSpark('accelX', imu.ax);
+    pushSpark('accelY', imu.ay);
+    pushSpark('accelZ', imu.az);
+    pushSpark('gyroX', imu.gx);
+    pushSpark('gyroY', imu.gy);
+    pushSpark('gyroZ', imu.gz);
+}
+
+function pushSpark(key, value) {
+    sparkData[key].push(value);
+    if (sparkData[key].length > SPARK_LEN) sparkData[key].shift();
+}
+
+// Draw sparklines at 10 Hz (not every frame)
+setInterval(() => {
+    drawSparkline('sparkAccelX', sparkData.accelX, '#ef4444', -4, 4);
+    drawSparkline('sparkAccelY', sparkData.accelY, '#22c55e', -4, 4);
+    drawSparkline('sparkAccelZ', sparkData.accelZ, '#3b82f6', -4, 4);
+    drawSparkline('sparkGyroX', sparkData.gyroX, '#ef4444', -500, 500);
+    drawSparkline('sparkGyroY', sparkData.gyroY, '#22c55e', -500, 500);
+    drawSparkline('sparkGyroZ', sparkData.gyroZ, '#3b82f6', -500, 500);
+}, 100);
+
+function drawSparkline(canvasId, data, color, minVal, maxVal) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || data.length < 2) return;
+
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.parentElement.offsetWidth;
+    const h = canvas.parentElement.offsetHeight;
+
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Zero line
+    const zeroY = h * (1 - (0 - minVal) / (maxVal - minVal));
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, zeroY);
+    ctx.lineTo(w, zeroY);
+    ctx.stroke();
+
+    // Data line
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+
+    const step = w / (SPARK_LEN - 1);
+    const offset = SPARK_LEN - data.length;
+
+    for (let i = 0; i < data.length; i++) {
+        const x = (offset + i) * step;
+        const norm = (data[i] - minVal) / (maxVal - minVal);
+        const y = h * (1 - Math.max(0, Math.min(1, norm)));
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, color.replace(')', ',0.15)').replace('rgb', 'rgba'));
+    grad.addColorStop(1, 'transparent');
+    ctx.lineTo((offset + data.length - 1) * step, h);
+    ctx.lineTo(offset * step, h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+}
+
+// ── LIDAR Update ─────────────────────────────────────────────────────────────
+
+function updateLIDAR(tof) {
+    if (!tof || tof.length < 64) return;
+
+    for (let i = 0; i < 64; i++) {
+        const dist = tof[i];
+        const cell = lidarCells[i];
+        cell.textContent = dist > 0 ? (dist < 1000 ? dist : (dist / 1000).toFixed(1) + 'k') : '—';
+        cell.style.background = distToColor(dist);
+    }
+}
+
+function distToColor(dist) {
+    if (dist <= 0) return 'rgba(255,255,255,0.05)';
+    const maxDist = 4000;
+    const t = Math.min(dist / maxDist, 1);
+    // Green → Yellow → Orange → Red → Dark Red
+    if (t < 0.3) {
+        const s = t / 0.3;
+        return `hsl(${120 - s * 60}, 70%, ${45 - s * 10}%)`;
+    } else if (t < 0.6) {
+        const s = (t - 0.3) / 0.3;
+        return `hsl(${60 - s * 30}, 75%, ${35 - s * 5}%)`;
+    } else if (t < 0.85) {
+        const s = (t - 0.6) / 0.25;
+        return `hsl(${30 - s * 30}, 70%, ${30 - s * 10}%)`;
+    } else {
+        const s = (t - 0.85) / 0.15;
+        return `hsl(0, ${60 - s * 30}%, ${20 - s * 8}%)`;
+    }
+}
+
+// ── AprilTag Update ──────────────────────────────────────────────────────────
+
+function updateAprilTags(tags) {
+    const list = document.getElementById('apriltagList');
+    const countBadge = document.getElementById('tagCount');
+
+    if (!tags || tags.length === 0) {
+        list.innerHTML = '<div class="apriltag-empty">No tags detected</div>';
+        countBadge.textContent = '0 tags';
+        return;
+    }
+
+    countBadge.textContent = `${tags.length} tag${tags.length > 1 ? 's' : ''}`;
+
+    list.innerHTML = tags.map(tag => `
+        <div class="apriltag-item">
+            <div class="apriltag-id-badge">${tag.id}</div>
+            <div class="apriltag-details">
+                pos: (${Math.round(tag.cx)}, ${Math.round(tag.cy)})<br>
+                rot: ${(tag.rotation * 180 / Math.PI).toFixed(1)}°
+                · margin: ${tag.decision_margin}
+                ${tag.z_translation ? `<br>T: (${tag.x_translation.toFixed(3)}, ${tag.y_translation.toFixed(3)}, ${tag.z_translation.toFixed(3)})` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// ── Controls ─────────────────────────────────────────────────────────────────
+
+// AprilTag Toggle
+document.getElementById('apriltagCheck').addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    state.apriltagEnabled = enabled;
+    if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+        state.ws.send(JSON.stringify({
+            action: enabled ? 'apriltag_on' : 'apriltag_off'
+        }));
+    }
+});
+
+// Quality Slider
+const qualitySlider = document.getElementById('qualitySlider');
+const qualityValue = document.getElementById('qualityValue');
+let qualityTimeout = null;
+
+qualitySlider.addEventListener('input', (e) => {
+    qualityValue.textContent = e.target.value;
+});
+
+qualitySlider.addEventListener('change', (e) => {
+    clearTimeout(qualityTimeout);
+    qualityTimeout = setTimeout(() => {
+        if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+            state.ws.send(JSON.stringify({
+                action: 'set_quality',
+                value: parseInt(e.target.value)
+            }));
+        }
+    }, 200);
+});
+
+// Recording
+function toggleRecording() {
+    if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+        if (state.recording) {
+            state.ws.send(JSON.stringify({ action: 'record_stop' }));
+        } else {
+            state.ws.send(JSON.stringify({ action: 'record_start' }));
+        }
+        state.recording = !state.recording;
+        updateRecordUI();
+    }
+}
+
+function updateRecordUI() {
+    const btn = document.getElementById('recordBtn');
+    const badge = document.getElementById('recBadge');
+
+    if (state.recording) {
+        btn.innerHTML = '<span>■</span> Stop';
+        btn.className = 'btn btn-stop';
+        badge.style.display = 'inline';
+    } else {
+        btn.innerHTML = '<span>●</span> Record';
+        btn.className = 'btn btn-record';
+        badge.style.display = 'none';
+    }
+}
+
+// ── Connection Status ────────────────────────────────────────────────────────
+
+function updateConnectionStatus(connected) {
+    const dot = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+
+    if (connected) {
+        dot.className = 'status-dot connected';
+        text.textContent = 'Connected';
+    } else {
+        dot.className = 'status-dot disconnected';
+        text.textContent = 'Reconnecting…';
+        document.getElementById('videoFrame').style.display = 'none';
+        document.getElementById('videoPlaceholder').style.display = 'flex';
+    }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
+connectWS();
+</script>
+
+</body>
+</html>

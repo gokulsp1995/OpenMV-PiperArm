@@ -1,0 +1,59 @@
+# Piper L Arm Controller — Configuration
+# ========================================
+
+# CAN bus configuration for pyAgxArm.
+# See: https://github.com/agilexrobotics/pyAgxArm/blob/master/docs/can_user.md
+can:
+  channel: "can0"              # CAN channel name (Linux: can0, Windows: 0)
+  interface: "socketcan"       # CAN interface (Linux: socketcan, Win: agx_cando)
+  bitrate: 1000000             # CAN bitrate (1 Mbps)
+  # Piper firmware version: default, v183, v188, v189
+  # Check with: robot.get_firmware()["software_version"]
+  firmware_version: "default"
+
+camera:
+  host: "0.0.0.0"     # listen address for camera (0.0.0.0 = any)
+  port: 8470           # TCP port the OpenMV camera serves on
+  timeout: 5.0         # seconds to wait for a camera response
+  # The camera's IP once connected to WiFi — needed to connect to it
+  camera_ip: ""        # filled in dynamically or set manually
+
+# Camera-to-end-effector rigid transform.
+# Translation in metres, rotation in degrees.
+# This describes where the camera is mounted relative to the J6 flange.
+camera_transform:
+  tx: 0.0
+  ty: 0.0
+  tz: 0.05             # camera is 50 mm ahead of the flange
+  rx: 0.0
+  ry: 0.0
+  rz: 0.0
+
+# Tool (pressing tip) offset from J6 flange, in metres.
+# The AgileX 2-finger gripper is mounted on the end-effector but is NOT
+# actuated — it serves as a passive mechanical offset.  The gripper tip
+# is used to physically press the button by moving the arm forward.
+tool_offset:
+  x: 0.0
+  y: 0.0
+  z: 0.145             # AgileX 2-finger gripper tip ~145 mm from flange
+
+# Map each starting position to its corresponding panel layout.
+# These panel names match the PANEL_LAYOUTS keys in the OpenMV config.
+# When scanning, the camera uses this layout for positional identification.
+panel_mapping:
+  call-lift: "panel1"            # horizontal row: (1)(2)(3)
+  floor-select-panel1: "panel2"  # 3×2 grid
+  floor-select-panel2: "panel2"  # 3×2 grid
+
+motion:
+  approach_speed: 50          # % of max speed for coarse moves
+  press_speed: 20             # % of max speed for button push
+  retract_speed: 40           # % of max speed for retraction
+  press_depth_mm: 5.0         # how far past button surface to push
+  approach_offset_mm: 50.0    # standoff distance before pressing
+  max_retries: 3              # number of press retries if button not white
+  settle_time: 1.5            # seconds to wait after a move before scanning
+  move_timeout: 10.0          # seconds to wait for a move to complete
+
+positions_dir: "positions/"
