@@ -1,0 +1,11 @@
+# trajectories/approach-panel.yaml
+name: approach-panel
+description: Home -> approach -> look pose, and back.
+
+trajectory:
+  - home
+  - approach-mid
+  - up-down-panel
+  - {action: press, target: up}
+  - approach-mid
+  - home

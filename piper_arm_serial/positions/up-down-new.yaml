@@ -1,0 +1,34 @@
+name: up-down-new
+description: look pose after camera remount, 8cm offset
+timestamp: '2026-09-22T10:31:43.117095'
+sdk: pyAgxArm
+joints:
+  joint_1: -1.426964
+  joint_2: 1.746307
+  joint_3: -1.13045
+  joint_4: 0.213768
+  joint_5: -0.599311
+  joint_6: 1.594166
+end_pose:
+  x: 0.058359
+  y: -0.478942
+  z: 0.308506
+  roll: 1.509849
+  pitch: -0.207572
+  yaw: 0.036216
+gripper: 0.0
+readable:
+  joints_deg:
+    joint_1_deg: -81.76
+    joint_2_deg: 100.06
+    joint_3_deg: -64.77
+    joint_4_deg: 12.25
+    joint_5_deg: -34.34
+    joint_6_deg: 91.34
+  end_pose_mm_deg:
+    x_mm: 58.36
+    y_mm: -478.94
+    z_mm: 308.51
+    roll_deg: 86.51
+    pitch_deg: -11.89
+    yaw_deg: 2.08

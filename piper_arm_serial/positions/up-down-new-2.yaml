@@ -1,0 +1,34 @@
+name: up-down-new-2
+description: 'Recorded position: up-down-new-2'
+timestamp: '2026-09-22T12:32:08.062331'
+sdk: pyAgxArm
+joints:
+  joint_1: -1.47428
+  joint_2: 2.028055
+  joint_3: -1.415253
+  joint_4: 0.21958
+  joint_5: -0.496616
+  joint_6: 1.465344
+end_pose:
+  x: 0.045372
+  y: -0.566751
+  z: 0.258931
+  roll: 1.609752
+  pitch: -0.084195
+  yaw: -0.010821
+gripper: 0.0
+readable:
+  joints_deg:
+    joint_1_deg: -84.47
+    joint_2_deg: 116.2
+    joint_3_deg: -81.09
+    joint_4_deg: 12.58
+    joint_5_deg: -28.45
+    joint_6_deg: 83.96
+  end_pose_mm_deg:
+    x_mm: 45.37
+    y_mm: -566.75
+    z_mm: 258.93
+    roll_deg: 92.23
+    pitch_deg: -4.82
+    yaw_deg: -0.62

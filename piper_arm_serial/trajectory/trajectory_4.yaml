@@ -1,0 +1,102 @@
+title: trajectory_4
+timestamp: '2026-09-10T00:49:39.552325'
+sdk: pyAgxArm
+settings:
+  default_speed: 30
+  settle_time: 0.5
+  move_timeout: 10.0
+positions:
+  point_1:
+    joints:
+      joint_1: -1.556136
+      joint_2: 0.165143
+      joint_3: -0.280823
+      joint_4: 0.0
+      joint_5: 0.110392
+      joint_6: 0.023614
+    end_pose:
+      x: 0.00113
+      y: -0.077101
+      z: 0.318856
+      roll: 0.249163
+      pitch: 1.475274
+      yaw: -1.305855
+    readable:
+      joints_deg:
+        joint_1_deg: -89.16
+        joint_2_deg: 9.46
+        joint_3_deg: -16.09
+        joint_4_deg: 6.33
+        joint_5_deg: 6.33
+        joint_6_deg: 1.35
+      end_pose_mm_deg:
+        x_mm: 1.13
+        y_mm: -77.1
+        z_mm: 318.86
+        roll_deg: 14.28
+        pitch_deg: 84.53
+        yaw_deg: -74.82
+  point_2:
+    joints:
+      joint_1: -1.64684
+      joint_2: 1.674958
+      joint_3: -1.436668
+      joint_4: -0.024103
+      joint_5: -0.243997
+      joint_6: -0.021956
+    end_pose:
+      x: -0.036819
+      y: -0.49017
+      z: 0.434472
+      roll: -0.45766
+      pitch: 1.467176
+      yaw: -2.1008
+    readable:
+      joints_deg:
+        joint_1_deg: -94.36
+        joint_2_deg: 95.97
+        joint_3_deg: -82.31
+        joint_4_deg: -13.98
+        joint_5_deg: -13.98
+        joint_6_deg: -1.26
+      end_pose_mm_deg:
+        x_mm: -36.82
+        y_mm: -490.17
+        z_mm: 434.47
+        roll_deg: -26.22
+        pitch_deg: 84.06
+        yaw_deg: -120.37
+  point_3:
+    joints:
+      joint_1: -0.010175
+      joint_2: -0.086533
+      joint_3: 0.039916
+      joint_4: 0.029356
+      joint_5: 0.12706
+      joint_6: 0.044349
+    end_pose:
+      x: 0.067985
+      y: -0.000354
+      z: 0.205894
+      roll: 1.477491
+      pitch: 1.497004
+      yaw: 1.471278
+    readable:
+      joints_deg:
+        joint_1_deg: -0.58
+        joint_2_deg: -4.96
+        joint_3_deg: 2.29
+        joint_4_deg: 7.28
+        joint_5_deg: 7.28
+        joint_6_deg: 2.54
+      end_pose_mm_deg:
+        x_mm: 67.98
+        y_mm: -0.35
+        z_mm: 205.89
+        roll_deg: 84.65
+        pitch_deg: 85.77
+        yaw_deg: 84.3
+trajectory:
+- point_1
+- point_2
+- point_3

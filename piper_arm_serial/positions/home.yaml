@@ -1,0 +1,34 @@
+name: home
+description: 'Recorded position: home'
+timestamp: '2026-09-18T17:36:29.716062'
+sdk: pyAgxArm
+joints:
+  joint_1: 0.00644
+  joint_2: -0.009407
+  joint_3: 0.007994
+  joint_4: 0.045187
+  joint_5: 0.165283
+  joint_6: 0.021799
+end_pose:
+  x: 0.072644
+  y: 0.001145
+  z: 0.210004
+  roll: 2.423704
+  pitch: 1.469201
+  yaw: 2.435048
+gripper: 0.0
+readable:
+  joints_deg:
+    joint_1_deg: 0.37
+    joint_2_deg: -0.54
+    joint_3_deg: 0.46
+    joint_4_deg: 2.59
+    joint_5_deg: 9.47
+    joint_6_deg: 1.25
+  end_pose_mm_deg:
+    x_mm: 72.64
+    y_mm: 1.15
+    z_mm: 210.0
+    roll_deg: 138.87
+    pitch_deg: 84.18
+    yaw_deg: 139.52

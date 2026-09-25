@@ -1,113 +1,80 @@
 # OpenMV AE3 — Lift Button Detector Configuration
 # ================================================
-# All constants for WiFi, camera, ToF, and detection parameters.
+# Rebuilt after flash corruption. WiFi/TCP constants removed (serial now),
+# blob-detection constants removed (template-only pipeline), and the
+# duplicated TEMPLATE_STEP / TEMPLATE_ROI definitions resolved.
 
-# ── WiFi ──────────────────────────────────────────────────────────────────────
-WIFI_SSID = "MeiPiehChi"
-WIFI_PASSWORD = "robot2robot"
-WIFI_TIMEOUT_MS = 15000  # max time to wait for association
+# -- Camera --------------------------------------------------------------------
+# PAG7936 1MP global shutter. NOTE: this sensor outputs 16:10, not 4:3 --
+# QVGA is 320x200 and VGA is 640x400, confirmed via img.height(). The old
+# values of 240/120 were wrong and skewed both the ToF row mapping and the
+# vertical back-projection.
+#
+# QVGA is the only usable size: VGA raises MemoryError in find_template()
+# with SEARCH_EX, and every smaller size (QQVGA, QQQVGA, HQVGA, QCIF...)
+# is rejected by the sensor with "Sensor control failed".
+CAMERA_WIDTH = 320
+CAMERA_HEIGHT = 200
+PRINCIPAL_X = 160.0        # image centre
+PRINCIPAL_Y = 100.0
+FOCAL_LENGTH_PX = 249.0    # nominal, halved from the 498 VGA figure.
+                            # Placeholder until calibrated -- see the
+                            # invariance test before trusting a press.
 
-# ── TCP Server ────────────────────────────────────────────────────────────────
-# The camera runs a TCP *server* so the robot computer can connect at will.
-TCP_PORT = 8470
-TCP_BACKLOG = 1  # only one client (the robot) at a time
-TCP_RECV_BUF = 512
+# -- VL53L8CX Time-of-Flight ----------------------------------------------------
+# The driver is the built-in `tof` module (tof.init(), tof.read_depth()),
+# NOT a vl53l8cx package -- that module doesn't exist on this firmware.
+# read_depth() returns (grid, min, max), not a bare list.
+TOF_GRID_SIZE = 8          # 8x8 zones
 
-# ── Camera ────────────────────────────────────────────────────────────────────
-# PAG7936 1 MP global-shutter sensor — nominal intrinsics at VGA (640×480).
-# The PAG7936 has a 1/4" optical format (~3.6 × 2.7 mm active area).
-# With the standard ~2.8 mm M12 lens: fx ≈ 2.8 * 640 / 3.6 ≈ 498 px.
-# Principal point assumed at image centre.  Refine after calibration.
-CAMERA_WIDTH = 640
-CAMERA_HEIGHT = 480
-FOCAL_LENGTH_PX = 498.0   # PAG7936 nominal focal length in pixels at VGA
-PRINCIPAL_X = 320.0        # principal point X (pixels)
-PRINCIPAL_Y = 240.0        # principal point Y (pixels)
+# Validity band. Zones with no valid return come back as sentinel values --
+# observed -127 and implausible highs in the thousands. Anything outside
+# this range is treated as "no reading" (0) rather than acted on.
+TOF_MIN_VALID_MM = 50
+TOF_MAX_VALID_MM = 300
+TOF_FOV_SCALE = 1.0
+TOF_FLIP_X = True
+TOF_FLIP_Y = True
+TOF_OFFSET_MM = 25
 
-# ── VL53L8CX Time-of-Flight ──────────────────────────────────────────────────
-TOF_GRID_SIZE = 8          # 8×8 zones
-TOF_I2C_BUS = 0            # on-board I2C bus index for the VL53L8CX
-TOF_I2C_ADDR = 0x29        # default I2C address
-TOF_RANGING_FREQ = 15      # Hz
+# -- Template Matching ----------------------------------------------------------
+TEMPLATE_DIR = "/flash/templates"
+TEMPLATE_THRESHOLD = 0.80  # NCC threshold. 0.60 matched up and down at the
+                            # same pixel; 0.85 separated them.
+TEMPLATE_STEP = 3          # search stride. ~81ms per match at QVGA.
 
-# ── Button Detection — LAB Colour Thresholds ─────────────────────────────────
-# Each tuple is (L_min, L_max, A_min, A_max, B_min, B_max) in LAB colour space.
-# Tuned for typical stainless-steel lift panels under corridor lighting.
-# Adjust after testing on the actual lift.
+# Reject matches whose centre falls outside this (x, y, w, h) box. Filtered
+# in button_detector.detect() rather than passed as find_template(roi=),
+# because on this firmware the roi argument crops the image in place and
+# the returned frame comes back cropped too.
+# None = search the whole frame.
+TEMPLATE_ROI = None
 
-# White illuminated button (high luminance, near-neutral chrominance)
-WHITE_THRESH = (70, 100, -15, 15, -15, 15)
-
-# Green illuminated button (moderate L, strong negative A = green)
-GREEN_THRESH = (30, 80, -60, -10, -10, 40)
-
-# Dark / unlit button (low luminance)
-DARK_THRESH_L_MAX = 35  # anything below this L is "dark"
-
-# ── Blob Detection Parameters ────────────────────────────────────────────────
-# Thresholds for finding metallic / plastic button blobs (initial blob search).
-# These are permissive — classification happens after.
-BLOB_THRESH = [(15, 100, -40, 40, -40, 40)]  # broad LAB range
-BLOB_MIN_PIXELS = 200
-BLOB_MAX_PIXELS = 8000
-BLOB_MIN_CIRCULARITY = 0.5   # buttons are roughly circular
-BLOB_MERGE_DISTANCE = 10
-BLOB_MARGIN = 5               # pixel margin around blobs to avoid edge effects
-
-# ── Template Matching ─────────────────────────────────────────────────────────
-TEMPLATE_DIR = "/templates"
-TEMPLATE_THRESHOLD = 0.60     # NCC threshold (0–1) for a positive match
-TEMPLATE_SCALE_RANGE = (0.8, 1.2)  # search at 80%–120% of template size
-TEMPLATE_SCALE_STEP = 0.1
-
-# Known button identifiers and their corresponding template filenames.
-# Arrow buttons use arrow-up.pgm / arrow-down.pgm.
+# CRITICAL: templates must be captured at the SAME resolution and distance
+# the detector runs at. find_template does no scale search. The original
+# 30x30 template was cropped from an HD frame, so the button appeared at a
+# completely different scale than in the live QVGA frame -- which is why it
+# matched masking tape and background instead of the arrow.
 BUTTON_TEMPLATES = {
-    "1": "btn_1.pgm",
-    "2": "btn_2.pgm",
-    "3": "btn_3.pgm",
-    "up": "arrow_up.pgm",
-    "down": "arrow_down.pgm",
+    "up": "up_red.pgm",
+    # "down": "arrow_down.pgm",   # re-enable once "up" is reliable
 }
 
-# ── Panel Layouts ─────────────────────────────────────────────────────────────
-# Describes the physical button arrangement on each lift panel.
-# Used as a fallback when templates are unavailable: detected blobs are
-# assigned IDs based on their relative positions within the image.
-#
-# Panel 1 — horizontal single row:
-#   (1)  (2)  (3)  [door-open]  [alarm]
-#   Buttons are sorted left-to-right by pixel X.
-#
-# Panel 2 — 3 rows × 2 columns:
-#   Row 1:  (3)      [other]
-#   Row 2:  (1)      (2)
-#   Row 3:  [other]  [other]
-#   Buttons are sorted top-to-bottom then left-to-right.
-#
-# "panel" is sent in the SCAN command so the detector knows which layout.
-PANEL_LAYOUTS = {
-    "panel1": {
-        # Ordered left→right.  Only the first 3 are relevant lift buttons.
-        "order": ["1", "2", "3"],
-        "arrangement": "horizontal",
-    },
-    "panel2": {
-        # Grid layout: (row, col) → button id.
-        "grid": {
-            (0, 0): "3",
-            (1, 0): "1",
-            (1, 1): "2",
-        },
-        "arrangement": "grid",
-        "rows": 3,
-        "cols": 2,
-    },
-}
+# -- Colour Classification ------------------------------------------------------
+# NOTE: init_camera() captures GRAYSCALE, so the a/b chrominance channels
+# don't exist and everything classifies as "dark". These thresholds are
+# kept for when colour capture is viable; press_button()'s white_lit
+# verification is non-functional until then.
+WHITE_THRESH = (70, 100, -15, 15, -15, 15)
+GREEN_THRESH = (30, 80, -60, -10, -10, 40)
+DARK_THRESH_L_MAX = 35
 
-# ── LED Feedback ──────────────────────────────────────────────────────────────
-# Use the on-board RGB LED to signal state.
-LED_IDLE = (0, 0, 1)      # blue = idle / waiting
-LED_SCANNING = (0, 1, 0)  # green = scanning
-LED_ERROR = (1, 0, 0)     # red = error
-LED_CONNECTED = (0, 1, 1) # cyan = WiFi connected
+# Pixel margin inset when sampling colour inside a matched rectangle,
+# to avoid edge effects.
+BLOB_MARGIN = 5
+
+# -- LED Feedback ---------------------------------------------------------------
+LED_IDLE = (0, 0, 1)       # blue  = idle, all sensors healthy
+LED_SCANNING = (0, 1, 0)   # green = scan in progress
+LED_ERROR = (1, 0, 0)      # red   = operation failed
+LED_DEGRADED = (0, 1, 1)   # cyan  = idle, but ToF failed to initialise

@@ -1,0 +1,34 @@
+name: approach-mid
+description: 'Recorded position: approach-mid'
+timestamp: '2026-09-18T17:37:42.926704'
+sdk: pyAgxArm
+joints:
+  joint_1: -1.563222
+  joint_2: 0.441813
+  joint_3: -0.434831
+  joint_4: 1.52451
+  joint_5: 0.011048
+  joint_6: 0.118682
+end_pose:
+  x: 0.001951
+  y: -0.125204
+  z: 0.363591
+  roll: 1.490808
+  pitch: -0.071279
+  yaw: 0.024347
+gripper: 0.0
+readable:
+  joints_deg:
+    joint_1_deg: -89.57
+    joint_2_deg: 25.31
+    joint_3_deg: -24.91
+    joint_4_deg: 87.35
+    joint_5_deg: 0.63
+    joint_6_deg: 6.8
+  end_pose_mm_deg:
+    x_mm: 1.95
+    y_mm: -125.2
+    z_mm: 363.59
+    roll_deg: 85.42
+    pitch_deg: -4.08
+    yaw_deg: 1.4

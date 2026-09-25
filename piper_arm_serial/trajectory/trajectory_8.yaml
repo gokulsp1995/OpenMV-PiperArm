@@ -1,0 +1,195 @@
+title: trajectory_8
+timestamp: '2026-09-15T22:17:52.027791'
+sdk: pyAgxArm
+settings:
+  default_speed: 30
+  settle_time: 0.5
+  move_timeout: 10.0
+positions:
+  point_1:
+    joints:
+      joint_1: -0.007714
+      joint_2: -0.010018
+      joint_3: -0.005044
+      joint_4: 0.064368
+      joint_5: 0.295449
+      joint_6: -0.064647
+    end_pose:
+      x: 0.070475
+      y: 0.00116
+      z: 0.203675
+      roll: 3.138556
+      pitch: 1.378287
+      yaw: -3.133302
+    readable:
+      joints_deg:
+        joint_1_deg: -0.44
+        joint_2_deg: -0.57
+        joint_3_deg: -0.29
+        joint_4_deg: 16.93
+        joint_5_deg: 16.93
+        joint_6_deg: -3.7
+      end_pose_mm_deg:
+        x_mm: 70.47
+        y_mm: 1.16
+        z_mm: 203.67
+        roll_deg: 179.83
+        pitch_deg: 78.97
+        yaw_deg: -179.53
+  point_2:
+    joints:
+      joint_1: -1.589646
+      joint_2: 0.33444
+      joint_3: -0.24562
+      joint_4: -0.014102
+      joint_5: 0.027175
+      joint_6: -0.061732
+    end_pose:
+      x: -0.002113
+      y: -0.110207
+      z: 0.296146
+      roll: -1.933319
+      pitch: 1.489673
+      yaw: 2.760901
+    readable:
+      joints_deg:
+        joint_1_deg: -91.08
+        joint_2_deg: 19.16
+        joint_3_deg: -14.07
+        joint_4_deg: 1.56
+        joint_5_deg: 1.56
+        joint_6_deg: -3.54
+      end_pose_mm_deg:
+        x_mm: -2.11
+        y_mm: -110.21
+        z_mm: 296.15
+        roll_deg: -110.77
+        pitch_deg: 85.35
+        yaw_deg: 158.19
+  point_3:
+    joints:
+      joint_1: -1.694034
+      joint_2: 1.574235
+      joint_3: -0.807023
+      joint_4: -0.042254
+      joint_5: -0.637726
+      joint_6: -0.037123
+    end_pose:
+      x: -0.047116
+      y: -0.398949
+      z: 0.2703
+      roll: -2.118289
+      pitch: 1.488836
+      yaw: 2.497496
+    readable:
+      joints_deg:
+        joint_1_deg: -97.06
+        joint_2_deg: 90.2
+        joint_3_deg: -46.24
+        joint_4_deg: -36.54
+        joint_5_deg: -36.54
+        joint_6_deg: -2.13
+      end_pose_mm_deg:
+        x_mm: -47.12
+        y_mm: -398.95
+        z_mm: 270.3
+        roll_deg: -121.37
+        pitch_deg: 85.3
+        yaw_deg: 143.1
+  point_4:
+    joints:
+      joint_1: -1.714699
+      joint_2: 1.855931
+      joint_3: -1.076763
+      joint_4: -0.155491
+      joint_5: -0.714311
+      joint_6: 0.048782
+    end_pose:
+      x: -0.06119
+      y: -0.486646
+      z: 0.246266
+      roll: -1.343904
+      pitch: 1.498173
+      yaw: -2.95753
+    readable:
+      joints_deg:
+        joint_1_deg: -98.25
+        joint_2_deg: 106.34
+        joint_3_deg: -61.69
+        joint_4_deg: -40.93
+        joint_5_deg: -40.93
+        joint_6_deg: 2.79
+      end_pose_mm_deg:
+        x_mm: -61.19
+        y_mm: -486.65
+        z_mm: 246.27
+        roll_deg: -77.0
+        pitch_deg: 85.84
+        yaw_deg: -169.45
+  point_5:
+    joints:
+      joint_1: -1.742467
+      joint_2: 1.607029
+      joint_3: -0.771785
+      joint_4: -0.200172
+      joint_5: -0.740543
+      joint_6: 0.120672
+    end_pose:
+      x: -0.05611
+      y: -0.395065
+      z: 0.253371
+      roll: -2.164802
+      pitch: 1.539869
+      yaw: 2.510691
+    readable:
+      joints_deg:
+        joint_1_deg: -99.84
+        joint_2_deg: 92.08
+        joint_3_deg: -44.22
+        joint_4_deg: -42.43
+        joint_5_deg: -42.43
+        joint_6_deg: 6.91
+      end_pose_mm_deg:
+        x_mm: -56.11
+        y_mm: -395.06
+        z_mm: 253.37
+        roll_deg: -124.03
+        pitch_deg: 88.23
+        yaw_deg: 143.85
+  point_6:
+    joints:
+      joint_1: 0.031608
+      joint_2: -0.009582
+      joint_3: 0.006301
+      joint_4: 0.01384
+      joint_5: 0.140918
+      joint_6: 0.120672
+    end_pose:
+      x: 0.072658
+      y: 0.002475
+      z: 0.212904
+      roll: 1.930456
+      pitch: 1.427226
+      yaw: 1.960616
+    readable:
+      joints_deg:
+        joint_1_deg: 1.81
+        joint_2_deg: -0.55
+        joint_3_deg: 0.36
+        joint_4_deg: 8.07
+        joint_5_deg: 8.07
+        joint_6_deg: 6.91
+      end_pose_mm_deg:
+        x_mm: 72.66
+        y_mm: 2.47
+        z_mm: 212.9
+        roll_deg: 110.61
+        pitch_deg: 81.77
+        yaw_deg: 112.34
+trajectory:
+- point_1
+- point_2
+- point_3
+- point_4
+- point_5
+- point_6

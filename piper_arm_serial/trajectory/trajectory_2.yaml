@@ -1,0 +1,350 @@
+title: trajectory_2
+timestamp: '2026-09-10T00:10:06.839634'
+sdk: pyAgxArm
+settings:
+  default_speed: 30
+  settle_time: 0.5
+  move_timeout: 10.0
+positions:
+  point_1:
+    joints:
+      joint_1: -0.004869
+      joint_2: -0.047508
+      joint_3: 0.016144
+      joint_4: -0.072274
+      joint_5: 0.383693
+      joint_6: 0.049445
+    end_pose:
+      x: 0.066657
+      y: -0.002786
+      z: 0.189876
+      roll: -3.049736
+      pitch: 1.305576
+      yaw: -3.079319
+    readable:
+      joints_deg:
+        joint_1_deg: -0.28
+        joint_2_deg: -2.72
+        joint_3_deg: 0.93
+        joint_4_deg: 21.98
+        joint_5_deg: 21.98
+        joint_6_deg: 2.83
+      end_pose_mm_deg:
+        x_mm: 66.66
+        y_mm: -2.79
+        z_mm: 189.88
+        roll_deg: -174.74
+        pitch_deg: 74.8
+        yaw_deg: -176.43
+  point_2:
+    joints:
+      joint_1: -0.004869
+      joint_2: -0.047508
+      joint_3: 0.016144
+      joint_4: -0.068434
+      joint_5: -0.046321
+      joint_6: 0.049445
+    end_pose:
+      x: 0.068624
+      y: -4.7e-05
+      z: 0.228561
+      roll: -0.116326
+      pitch: 1.404798
+      yaw: -0.119607
+    readable:
+      joints_deg:
+        joint_1_deg: -0.28
+        joint_2_deg: -2.72
+        joint_3_deg: 0.93
+        joint_4_deg: -2.65
+        joint_5_deg: -2.65
+        joint_6_deg: 2.83
+      end_pose_mm_deg:
+        x_mm: 68.62
+        y_mm: -0.05
+        z_mm: 228.56
+        roll_deg: -6.67
+        pitch_deg: 80.49
+        yaw_deg: -6.85
+  point_3:
+    joints:
+      joint_1: -0.007103
+      joint_2: 0.259478
+      joint_3: -0.211586
+      joint_4: -0.068434
+      joint_5: -0.055222
+      joint_6: 0.049602
+    end_pose:
+      x: 0.09804
+      y: -0.000353
+      z: 0.297441
+      roll: -0.198741
+      pitch: 1.474419
+      yaw: -0.202947
+    readable:
+      joints_deg:
+        joint_1_deg: -0.41
+        joint_2_deg: 14.87
+        joint_3_deg: -12.12
+        joint_4_deg: -3.16
+        joint_5_deg: -3.16
+        joint_6_deg: 2.84
+      end_pose_mm_deg:
+        x_mm: 98.04
+        y_mm: -0.35
+        z_mm: 297.44
+        roll_deg: -11.39
+        pitch_deg: 84.48
+        yaw_deg: -11.63
+  point_4:
+    joints:
+      joint_1: -1.557549
+      joint_2: 0.259478
+      joint_3: -0.211586
+      joint_4: -0.068434
+      joint_5: -0.055222
+      joint_6: 0.051924
+    end_pose:
+      x: 0.001642
+      y: -0.098027
+      z: 0.297441
+      roll: -0.175109
+      pitch: 1.474838
+      yaw: -1.729656
+    readable:
+      joints_deg:
+        joint_1_deg: -89.24
+        joint_2_deg: 14.87
+        joint_3_deg: -12.12
+        joint_4_deg: -3.16
+        joint_5_deg: -3.16
+        joint_6_deg: 2.98
+      end_pose_mm_deg:
+        x_mm: 1.64
+        y_mm: -98.03
+        z_mm: 297.44
+        roll_deg: -10.03
+        pitch_deg: 84.5
+        yaw_deg: -99.1
+  point_5:
+    joints:
+      joint_1: -1.718381
+      joint_2: 1.426981
+      joint_3: -1.191414
+      joint_4: -0.068434
+      joint_5: -0.053617
+      joint_6: 0.051924
+    end_pose:
+      x: -0.059748
+      y: -0.404117
+      z: 0.427964
+      roll: -2.974233
+      pitch: 1.474629
+      yaw: 1.594987
+    readable:
+      joints_deg:
+        joint_1_deg: -98.46
+        joint_2_deg: 81.76
+        joint_3_deg: -68.26
+        joint_4_deg: -3.07
+        joint_5_deg: -3.07
+        joint_6_deg: 2.98
+      end_pose_mm_deg:
+        x_mm: -59.75
+        y_mm: -404.12
+        z_mm: 427.96
+        roll_deg: -170.41
+        pitch_deg: 84.49
+        yaw_deg: 91.39
+  point_6:
+    joints:
+      joint_1: -1.705606
+      joint_2: 2.104693
+      joint_3: -2.145097
+      joint_4: -0.068434
+      joint_5: -0.025237
+      joint_6: 0.051924
+    end_pose:
+      x: -0.082516
+      y: -0.609542
+      z: 0.465693
+      roll: -0.108333
+      pitch: 1.417033
+      yaw: -1.813467
+    readable:
+      joints_deg:
+        joint_1_deg: -97.72
+        joint_2_deg: 120.59
+        joint_3_deg: -122.91
+        joint_4_deg: -1.45
+        joint_5_deg: -1.45
+        joint_6_deg: 2.98
+      end_pose_mm_deg:
+        x_mm: -82.52
+        y_mm: -609.54
+        z_mm: 465.69
+        roll_deg: -6.21
+        pitch_deg: 81.19
+        yaw_deg: -103.9
+  point_7:
+    joints:
+      joint_1: -1.70667
+      joint_2: 2.202815
+      joint_3: -2.357538
+      joint_4: -0.067946
+      joint_5: 0.140656
+      joint_6: 0.051662
+    end_pose:
+      x: -0.086387
+      y: -0.625403
+      z: 0.474765
+      roll: -0.142611
+      pitch: 1.468101
+      yaw: -1.859613
+    readable:
+      joints_deg:
+        joint_1_deg: -97.78
+        joint_2_deg: 126.21
+        joint_3_deg: -135.08
+        joint_4_deg: 8.06
+        joint_5_deg: 8.06
+        joint_6_deg: 2.96
+      end_pose_mm_deg:
+        x_mm: -86.39
+        y_mm: -625.4
+        z_mm: 474.76
+        roll_deg: -8.17
+        pitch_deg: 84.12
+        yaw_deg: -106.55
+  point_8:
+    joints:
+      joint_1: -1.706443
+      joint_2: 1.431903
+      joint_3: -1.262833
+      joint_4: -0.074299
+      joint_5: -0.181741
+      joint_6: 0.113167
+    end_pose:
+      x: -0.054379
+      y: -0.407437
+      z: 0.466991
+      roll: 0.370324
+      pitch: 1.464069
+      yaw: -1.320691
+    readable:
+      joints_deg:
+        joint_1_deg: -97.77
+        joint_2_deg: 82.04
+        joint_3_deg: -72.36
+        joint_4_deg: -10.41
+        joint_5_deg: -10.41
+        joint_6_deg: 6.48
+      end_pose_mm_deg:
+        x_mm: -54.38
+        y_mm: -407.44
+        z_mm: 466.99
+        roll_deg: 21.22
+        pitch_deg: 83.89
+        yaw_deg: -75.67
+  point_9:
+    joints:
+      joint_1: -1.626158
+      joint_2: 0.139731
+      joint_3: -0.182177
+      joint_4: -0.06627
+      joint_5: 0.070546
+      joint_6: 0.119956
+    end_pose:
+      x: -0.004876
+      y: -0.080297
+      z: 0.284715
+      roll: 0.738833
+      pitch: 1.490511
+      yaw: -0.890397
+    readable:
+      joints_deg:
+        joint_1_deg: -93.17
+        joint_2_deg: 8.01
+        joint_3_deg: -10.44
+        joint_4_deg: 4.04
+        joint_5_deg: 4.04
+        joint_6_deg: 6.87
+      end_pose_mm_deg:
+        x_mm: -4.88
+        y_mm: -80.3
+        z_mm: 284.71
+        roll_deg: 42.33
+        pitch_deg: 85.4
+        yaw_deg: -51.02
+  point_10:
+    joints:
+      joint_1: -0.007924
+      joint_2: 0.139731
+      joint_3: -0.182177
+      joint_4: -0.06627
+      joint_5: 0.070546
+      joint_6: 0.119956
+    end_pose:
+      x: 0.080438
+      y: -0.001063
+      z: 0.284715
+      roll: 0.738833
+      pitch: 1.490511
+      yaw: 0.72782
+    readable:
+      joints_deg:
+        joint_1_deg: -0.45
+        joint_2_deg: 8.01
+        joint_3_deg: -10.44
+        joint_4_deg: 4.04
+        joint_5_deg: 4.04
+        joint_6_deg: 6.87
+      end_pose_mm_deg:
+        x_mm: 80.44
+        y_mm: -1.06
+        z_mm: 284.71
+        roll_deg: 42.33
+        pitch_deg: 85.4
+        yaw_deg: 41.7
+  point_11:
+    joints:
+      joint_1: -0.007924
+      joint_2: -0.079639
+      joint_3: 0.033685
+      joint_4: -0.06627
+      joint_5: 0.072623
+      joint_6: 0.119956
+    end_pose:
+      x: 0.06798
+      y: -0.000977
+      z: 0.212912
+      roll: 0.727244
+      pitch: 1.489429
+      yaw: 0.716126
+    readable:
+      joints_deg:
+        joint_1_deg: -0.45
+        joint_2_deg: -4.56
+        joint_3_deg: 1.93
+        joint_4_deg: 4.16
+        joint_5_deg: 4.16
+        joint_6_deg: 6.87
+      end_pose_mm_deg:
+        x_mm: 67.98
+        y_mm: -0.98
+        z_mm: 212.91
+        roll_deg: 41.67
+        pitch_deg: 85.34
+        yaw_deg: 41.03
+trajectory:
+- point_1
+- point_2
+- point_3
+- point_4
+- point_5
+- point_6
+- point_7
+- point_8
+- point_9
+- point_10
+- point_11

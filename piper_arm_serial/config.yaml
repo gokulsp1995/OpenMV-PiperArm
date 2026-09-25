@@ -1,0 +1,104 @@
+# Piper L Arm Controller — Configuration
+# ========================================
+
+can:
+  channel: "can0"
+  interface: "socketcan"
+  bitrate: 1000000
+  firmware_version: "default"     # default | v183 | v188 | v189
+
+# ── Camera (USB serial) ───────────────────────────────────────────────────────
+camera:
+  port_hint: "OpenMV"   # substring matched against /dev/serial/by-id/.
+                         # Not a ttyACM number: this PC also has Unitree CDC
+                         # ports competing for those, and they renumber.
+  baudrate: 115200      # ignored by USB CDC; pyserial's API wants a value
+  timeout: 5.0          # seconds to wait for a reply
+
+# ── Camera-to-flange transform ────────────────────────────────────────────────
+# Where the camera sits relative to the J6 flange: the flat mounting face at
+# the end of joint 6, which is what get_flange_pose() reports.
+# Translation in metres, rotation in degrees.
+#
+# !!! PLACEHOLDER VALUES -- NOT CALIBRATED !!!
+# These claim the camera sits exactly on the flange axis with zero rotation,
+# which is not true of any bracket mount. Computed button positions will be
+# wrong until this is measured.
+#
+# To calibrate:
+#   1. python3 jog_axes.py --interactive
+#      Move to a pose with roll/pitch/yaw near zero -- only there do the
+#      flange axes line up with the base axes. Jog +X and watch which way
+#      the camera physically moves; that is flange +X. Repeat for +Y.
+#   2. Measure the lens centre from the flange face along those axes -> tx,
+#      ty, tz. CAD is better than a ruler if you have the mount drawing.
+#   3. Rotation: put the button on the right of frame and check the sign of
+#      cam_x, then at the top and check cam_y. If image-right maps to
+#      flange-down you have rz = 90, not a small angle.
+#   4. python3 calib_logger.py  (5-8 poses, same button in view, varying
+#      distance AND angle), then calib_analyse.py. The button did not move,
+#      so any spread in the computed base-frame position is this error.
+#      Tune until it closes, then set calibrated: true.
+camera_transform:
+  calibrated: true     # set true once the invariance test passes
+ # tx: 0.0 #-0.02
+ # ty: -0.0782 #-0.0582
+ #  tz: 0.05 #0.03
+
+  tx: 0.0137
+  ty: -0.0782
+  tz: 0.045
+  rx: 21.12
+  ry: 16.07
+  rz: -189.71
+
+# ── Tool offset ───────────────────────────────────────────────────────────────
+# The AgileX 2-finger gripper is not actuated -- it is a passive standoff, and
+# the press happens by driving the whole arm forward until its tip contacts
+# the button. The flange must therefore stop tool_offset.z short of the target.
+tool_offset:
+  x: 0.0
+  y: 0.0
+  z: 0.145
+
+# ── Motion ────────────────────────────────────────────────────────────────────
+motion:
+  approach_speed: 15
+  press_speed: 20             # keep low: this is the stroke into the panel
+  retract_speed: 40
+
+  press_depth_mm: 5.0         # how far past the detected surface to push
+  approach_offset_mm: 50.0    # standoff before the press stroke
+  clearance_mm: 150.0         # extra Cartesian backoff AFTER retracting,
+                               # before any joint-space move. move_j paths
+                               # are not straight lines in space, so without
+                               # this the 145mm tool can sweep the panel.
+
+  max_retries: 3
+  settle_time: 1.5            # after a move, before scanning
+  move_timeout: 10.0
+  joint_tolerance_deg: 1.0    # a move counts as complete only when every
+                               # joint is within this of target -- more
+                               # reliable than motion_status alone
+
+  # Scan averaging. A single scan is usually stable to a few mm but throws
+  # the occasional 50mm+ outlier when a ToF zone catches background instead
+  # of the button. Median of several samples ignores those.
+  scan_samples: 5
+  scan_min_hits: 3            # fewer valid samples than this -> no press
+  scan_max_spread_mm: 25      # samples disagreeing by more than this -> no
+                               # press; something is wrong, don't guess
+
+  # Colour classification needs a/b chrominance, which a GRAYSCALE capture
+  # does not have -- every button reports "dark", so white_lit verification
+  # can never succeed. Leave false until colour capture is viable.
+  verify_press: false
+
+# ── Panel layouts ─────────────────────────────────────────────────────────────
+# Only consulted by the camera's positional fallback, which does not run
+# while template matching succeeds. Effectively unused for the arrow buttons.
+panel_mapping:
+  up-down-panel: "panel1"
+
+positions_dir: "positions/"
+trajectories_dir: "trajectory/"

@@ -1,0 +1,34 @@
+name: zero-pose
+description: 'Recorded position: zero-pose'
+timestamp: '2026-09-18T13:04:38.974647'
+sdk: pyAgxArm
+joints:
+  joint_1: 0.036704
+  joint_2: -0.00452
+  joint_3: 0.006213
+  joint_4: 0.0
+  joint_5: -1.48531
+  joint_6: -0.036303
+end_pose:
+  x: -0.017709
+  y: -0.00065
+  z: 0.308609
+  roll: 0.0
+  pitch: -0.000105
+  yaw: 0.000401
+gripper: 0.0
+readable:
+  joints_deg:
+    joint_1_deg: 2.1
+    joint_2_deg: -0.26
+    joint_3_deg: 0.36
+    joint_4_deg: 0.0
+    joint_5_deg: -85.1
+    joint_6_deg: -2.08
+  end_pose_mm_deg:
+    x_mm: -17.71
+    y_mm: -0.65
+    z_mm: 308.61
+    roll_deg: 0.0
+    pitch_deg: -0.01
+    yaw_deg: 0.02

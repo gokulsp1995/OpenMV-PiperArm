@@ -1,0 +1,6 @@
+  trajectory:
+    - home
+    - approach-mid                                    # plain joint move                  # same, explicit
+    - {name: up-down-panel, mode: linear}      # straight-line move
+    - approach-mid
+    - home

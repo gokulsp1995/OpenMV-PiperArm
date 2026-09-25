@@ -1,8 +1,15 @@
 # OpenMV AE3 — Lift Button Detector
 # ==================================
-# Vision pipeline: blob detection → colour classification → template matching.
-# Produces a list of detected buttons with ID, pixel position, colour state,
-# and 3D camera-frame coordinates (using ToF distance + pinhole model).
+# Vision pipeline: template matching → colour classification → 3D back-projection.
+#
+# NEW: the blob pre-filter stage is bypassed. On this board it produced a
+# single ~196k-pixel whole-frame blob (LAB threshold far too permissive) and
+# a negative roundness value, so every candidate was rejected before template
+# matching ever ran. Direct full-frame find_template was proven reliable in
+# the IDE, so that's what this uses.
+#
+# The blob path is kept below as _detect_via_blobs() for when the numbered
+# buttons come back and the LAB thresholds have been tuned properly.
 
 import image
 import os
@@ -16,30 +23,34 @@ class ButtonDetector:
         self._templates = {}  # {button_id: image.Image}
         self._load_templates()
 
-    # ── Template Loading ──────────────────────────────────────────────────────
+    # -- Template Loading ------------------------------------------------------
 
     def _load_templates(self):
-        """Load .pgm template images from flash."""
+        """Load .pgm template images from flash.
+
+        NOTE: find_template() needs a loaded image.Image, not a path string.
+        """
         for btn_id, fname in config.BUTTON_TEMPLATES.items():
             path = config.TEMPLATE_DIR + "/" + fname
             try:
-                # Check file exists (MicroPython os.stat)
                 os.stat(path)
-                self._templates[btn_id] = path  # store path; load lazily
-                print("[Det] Template loaded:", btn_id, "→", path)
+                self._templates[btn_id] = image.Image(path)
+                print("[Det] Template loaded:", btn_id, "->", path)
             except OSError:
                 print("[Det] Template missing:", path)
+            except Exception as e:
+                print("[Det] Template load failed:", path, e)
 
-    # ── Main Detection Entry Point ────────────────────────────────────────────
+    # -- Main Detection Entry Point --------------------------------------------
 
     def detect(self, img, tof_reader=None, panel=None):
-        """Run the full detection pipeline on *img* (RGB565).
+        """Run template matching on the full frame.
 
         Args:
-            img: The captured RGB565 image.
+            img: The captured image.
             tof_reader: Optional ToFReader instance for distance measurement.
-            panel: Optional panel name ("panel1" or "panel2") for position-
-                   based identification fallback when templates are missing.
+            panel: Unused in this path. Kept for API compatibility -- the
+                   positional fallback only applies to the blob pipeline.
 
         Returns a list of dicts:
             [{"id": str, "pixel_x": int, "pixel_y": int,
@@ -48,52 +59,56 @@ class ButtonDetector:
         """
         detections = []
 
-        # --- Step 1: Find candidate blobs (circular bright-ish regions) ------
-        blobs = img.find_blobs(
-            config.BLOB_THRESH,
-            pixels_threshold=config.BLOB_MIN_PIXELS,
-            area_threshold=config.BLOB_MIN_PIXELS,
-            merge=True,
-            margin=config.BLOB_MERGE_DISTANCE,
-        )
+        # Template matching needs grayscale. If the frame is RGB565, match
+        # against a grayscale copy but sample colour from the original.
+        match_img = img
+        if img.format() != image.GRAYSCALE:
+            try:
+                match_img = img.to_grayscale(copy=True)
+            except Exception:
+                # If copy isn't supported, fall back to matching on img as-is.
+                match_img = img
 
-        # Filter by circularity and size
-        candidates = []
-        for b in blobs:
-            if b.pixels() > config.BLOB_MAX_PIXELS:
+        for btn_id, tpl in self._templates.items():
+            try:
+                match = match_img.find_template(
+                    tpl,
+                    config.TEMPLATE_THRESHOLD,
+                    step=config.TEMPLATE_STEP,
+                    search=image.SEARCH_EX,
+                    roi=config.TEMPLATE_ROI,
+                )
+            except Exception as e:
+                print("[Det] Match error for", btn_id, ":", e)
                 continue
-            if b.roundness() < config.BLOB_MIN_CIRCULARITY:
+
+            if match is None:
                 continue
-            candidates.append(b)
 
-        # --- Step 2: For each candidate, classify colour and identify --------
-        for blob in candidates:
-            cx = blob.cx()
-            cy = blob.cy()
+            # find_template returns (x, y, w, h)
+            x, y, w, h = match[0], match[1], match[2], match[3]
+            cx = x + w // 2
+            cy = y + h // 2
+            
+            if config.TEMPLATE_ROI:
+                rx, ry, rw, rh = config.TEMPLATE_ROI
+                if not (rx <= cx < rx + rw and ry <= cy < ry + rh):
+                    continue
+                
 
-            # Colour classification in the blob's ROI
-            state = self._classify_colour(img, blob)
+            state = self._classify_colour_rect(img, x, y, w, h)
 
-            # Template matching to determine button identity
-            btn_id = self._identify_button(img, blob)
-            if btn_id is None and panel is not None:
-                # Defer positional assignment (done after all blobs collected)
-                pass
-            elif btn_id is None:
-                continue  # skip blobs that don't match any known button
-
-            # --- Step 3: Distance from ToF ───────────────────────────────────
             distance_mm = 0
             if tof_reader is not None:
-                distance_mm = tof_reader.get_distance_at_pixel(cx, cy)
-
-            # --- Step 4: Back-project to 3D camera frame ─────────────────────
+            #     distance_mm = tof_reader.get_distance_at_pixel(cx, cy)
+                  distance_mm = tof_reader.get_distance_in_rect(x, y, w, h)
             cam_x, cam_y, cam_z = self._pixel_to_camera(cx, cy, distance_mm)
 
             detections.append({
                 "id": btn_id,
                 "pixel_x": cx,
                 "pixel_y": cy,
+                "bbox": [x, y, w, h],
                 "cam_x": round(cam_x, 4),
                 "cam_y": round(cam_y, 4),
                 "cam_z": round(cam_z, 4),
@@ -101,167 +116,59 @@ class ButtonDetector:
                 "state": state,
             })
 
-        # --- Step 5: Positional fallback for unidentified blobs ───────────────
-        # If we have a panel layout and some detections lack IDs, try to assign
-        # them based on their spatial arrangement.
-        unidentified = [d for d in detections if d["id"] is None]
-        if unidentified and panel is not None:
-            self._assign_ids_by_position(unidentified, panel)
-
-        # Remove any remaining unidentified detections
-        detections = [d for d in detections if d["id"] is not None]
-
         return detections
 
-    # ── Colour Classification ─────────────────────────────────────────────────
+    # -- Colour Classification --------------------------------------------------
 
-    def _classify_colour(self, img, blob):
-        """Classify the button state based on average colour inside the blob.
+    def _classify_colour_rect(self, img, x, y, w, h):
+        """Classify button state from the average colour inside a rectangle.
+
+        Same thresholds as the blob version, but takes an explicit rect
+        instead of a blob object.
 
         Returns one of: "white_lit", "green_lit", "dark".
         """
-        # Extract a small ROI around the blob centre for colour sampling
         margin = config.BLOB_MARGIN
-        rx = max(0, blob.x() + margin)
-        ry = max(0, blob.y() + margin)
-        rw = max(1, blob.w() - 2 * margin)
-        rh = max(1, blob.h() - 2 * margin)
-        roi = (rx, ry, rw, rh)
+        rx = max(0, x + margin)
+        ry = max(0, y + margin)
+        rw = max(1, w - 2 * margin)
+        rh = max(1, h - 2 * margin)
 
-        stats = img.get_statistics(roi=roi)
-        l_mean = stats.l_mean()
-        a_mean = stats.a_mean()
-        b_mean = stats.b_mean()
+        # Clamp to image bounds -- img.width()/height() ARE methods on this
+        # firmware, unlike blob attributes.
+        rw = min(rw, img.width() - rx)
+        rh = min(rh, img.height() - ry)
+        if rw <= 0 or rh <= 0:
+            return "dark"
 
-        # Check green first (button 1 is always green — caller may ignore)
+        try:
+            stats = img.get_statistics(roi=(rx, ry, rw, rh))
+            l_mean = stats.l_mean
+            a_mean = stats.a_mean
+            b_mean = stats.b_mean
+        except Exception as e:
+            print("[Det] Colour stats failed:", e)
+            return "dark"
+
         if (config.GREEN_THRESH[0] <= l_mean <= config.GREEN_THRESH[1] and
                 config.GREEN_THRESH[2] <= a_mean <= config.GREEN_THRESH[3] and
                 config.GREEN_THRESH[4] <= b_mean <= config.GREEN_THRESH[5]):
             return "green_lit"
 
-        # Check white
         if (config.WHITE_THRESH[0] <= l_mean <= config.WHITE_THRESH[1] and
                 config.WHITE_THRESH[2] <= a_mean <= config.WHITE_THRESH[3] and
                 config.WHITE_THRESH[4] <= b_mean <= config.WHITE_THRESH[5]):
             return "white_lit"
 
-        # Default: dark / unlit
         return "dark"
 
-    # ── Template Identification ───────────────────────────────────────────────
-
-    def _identify_button(self, img, blob):
-        """Try to match the blob region against known button templates.
-
-        Returns the button ID string ("1", "2", "up", …) or None.
-        """
-        if not self._templates:
-            # No templates available — fall back to positional heuristic
-            return self._identify_by_position(blob)
-
-        best_id = None
-        best_score = config.TEMPLATE_THRESHOLD  # minimum acceptable score
-
-        # Extract the blob ROI as a sub-image for matching
-        margin = 2
-        rx = max(0, blob.x() - margin)
-        ry = max(0, blob.y() - margin)
-        rw = min(img.width() - rx, blob.w() + 2 * margin)
-        rh = min(img.height() - ry, blob.h() + 2 * margin)
-        roi = (rx, ry, rw, rh)
-
-        for btn_id, tpl_path in self._templates.items():
-            try:
-                # find_template returns the best match within the ROI
-                # step=2 for speed, search=image.SEARCH_EX for exhaustive
-                match = img.find_template(
-                    tpl_path,
-                    config.TEMPLATE_THRESHOLD,
-                    roi=roi,
-                    step=2,
-                    search=image.SEARCH_EX,
-                )
-                if match is not None:
-                    # match is (x, y, w, h, score) — newer API
-                    # or (x, y, w, h) — older API; score via separate call
-                    # We simply accept the first match above threshold.
-                    # If we got here, the template matched.
-                    # Use overlap ratio as a proxy score
-                    # (find_template already filtered by threshold)
-                    best_id = btn_id
-                    break  # first match wins (templates are distinct enough)
-            except Exception:
-                pass  # template load/match failure — skip
-
-        return best_id
-
-    def _identify_by_position(self, blob):
-        """Fallback heuristic when templates are unavailable.
-
-        This is only used when panel layout is NOT provided.
-        When a panel name IS given, _assign_ids_by_position is used instead.
-        """
-        return None
-
-    def _assign_ids_by_position(self, detections, panel_name):
-        """Assign button IDs to unidentified detections based on panel layout.
-
-        Modifies the detection dicts in-place, setting their 'id' field.
-
-        Panel 1 (horizontal row):  sort left→right by pixel_x → (1)(2)(3)
-        Panel 2 (3×2 grid):       cluster into grid cells → map by (row,col)
-        """
-        layout = config.PANEL_LAYOUTS.get(panel_name)
-        if layout is None:
-            return
-
-        arrangement = layout.get("arrangement", "horizontal")
-
-        if arrangement == "horizontal":
-            # Sort by X position (left to right)
-            detections.sort(key=lambda d: d["pixel_x"])
-            order = layout.get("order", [])
-            for i, det in enumerate(detections):
-                if i < len(order):
-                    det["id"] = order[i]
-                # Extra blobs beyond the known buttons stay None
-
-        elif arrangement == "grid":
-            grid_map = layout.get("grid", {})
-            n_rows = layout.get("rows", 3)
-            n_cols = layout.get("cols", 2)
-
-            if not detections:
-                return
-
-            # Determine grid boundaries from the blob positions
-            xs = [d["pixel_x"] for d in detections]
-            ys = [d["pixel_y"] for d in detections]
-            x_min, x_max = min(xs), max(xs)
-            y_min, y_max = min(ys), max(ys)
-
-            # Add margin to avoid edge effects
-            x_span = max(x_max - x_min, 1)
-            y_span = max(y_max - y_min, 1)
-
-            for det in detections:
-                # Map pixel position to grid cell
-                col = int((det["pixel_x"] - x_min) * n_cols / (x_span + 1))
-                row = int((det["pixel_y"] - y_min) * n_rows / (y_span + 1))
-                col = max(0, min(n_cols - 1, col))
-                row = max(0, min(n_rows - 1, row))
-
-                btn_id = grid_map.get((row, col))
-                if btn_id is not None:
-                    det["id"] = btn_id
-
-    # ── 3D Back-Projection ────────────────────────────────────────────────────
+    # -- 3D Back-Projection ------------------------------------------------------
 
     @staticmethod
     def _pixel_to_camera(px, py, distance_mm):
         """Convert pixel + ToF distance to 3D point in camera frame (metres).
 
-        Uses a simple pinhole camera model:
+        Pinhole model:
             X_cam = (px - cx) * Z / fx
             Y_cam = (py - cy) * Z / fy
             Z_cam = distance (from ToF)
