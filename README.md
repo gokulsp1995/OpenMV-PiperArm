@@ -219,22 +219,14 @@ startup — useful as a machine-checkable liveness signal.
 - **Connection:** USB (camera), USB-to-CAN adapter at 1 Mbit/s (arm)
 
 ## Known Limitations
-
-- **`move_l` (linear Cartesian motion) has occasionally silently failed
-  to move the arm** — no error raised, arm just doesn't move. Not yet
-  isolated; suspected singularity or unreachable IK.
 - **Template matching has no scale tolerance** — works only within a
   narrow band around the capture distance.
-- **Colour state classification is non-functional.** The camera captures
-  grayscale (memory constraints at higher resolutions), which has no
-  a/b chrominance channels, so `white_lit` verification can never
-  succeed. `verify_press` should stay `false`.
 - **Press direction follows the flange's current orientation, not the
   panel's actual surface normal.** Fine when squared to the panel.
 - **No lens distortion correction** — positional error increases for
   detections near the frame edges.
 
-## Gotchas
+## NOTE:
 
 - **Never edit camera files through the mass-storage mount** while
   MicroPython also has the filesystem open — two writers corrupts it.
@@ -245,8 +237,4 @@ startup — useful as a machine-checkable liveness signal.
   `viewer_grid.py` before running anything that presses.
 - **Don't move the mobile base during calibration collection.** The
   method assumes the button's base-frame position is constant across
-  samples; base movement corrupts this silently.
-- **Avoid hand-editing `.py` files in `nano` over SSH** — pasted blocks
-  have repeatedly mixed tabs and spaces here, producing indentation
-  errors invisible in the editor. Prefer `scp` or a `cat > file << 'EOF'`
-  heredoc, and verify with `python3 -c "import ast; ast.parse(open('f.py').read())"`.
+  samples; base movement corrupts this silently.`.
