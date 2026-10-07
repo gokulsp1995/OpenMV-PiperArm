@@ -61,8 +61,7 @@ openmv-piperarm/
 ### 1. Set Up the OpenMV Camera
 
 1. Connect the OpenMV AE3 via USB.
-2. Push `openmv_camera/*.py` with `mpremote` (**not** the mass-storage
-   mount — see [Gotchas](#gotchas)):
+2. Push `openmv_camera/*.py` with `mpremote`:
    ```bash
    mpremote connect /dev/ttyACM0 fs cp main.py :main.py
    mpremote connect /dev/ttyACM0 fs cp config.py :config.py
